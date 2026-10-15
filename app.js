@@ -1,0 +1,73 @@
+// Ссылки на оплату персональных раскладов (пока пусто — показывается уведомление)
+const PAY_URLS={t300:"",t500:"",t900:""};
+const READER_URL="https://app.lava.top/products/9180cf9e-30e3-4d68-8228-bbbfa04704ed";
+const DONATE_URL="https://app.lava.top/mayayav?tabId=donate";
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+function rnd(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}
+function shuffle(){const d=DECK.map((c,i)=>i);for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]]}return d.map(i=>({...DECK[i],r:false}))}
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("v");setTimeout(()=>e.classList.remove("v"),2600)}
+// ---- звук (WebAudio, мягкий синтез с реверберацией) ----
+let snd=false,ac=null,bus=null;
+function A(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const c=ac,len=c.sampleRate*3.2,ir=c.createBuffer(2,len,c.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2)}
+ const cv=c.createConvolver();cv.buffer=ir;const wet=c.createGain();wet.gain.value=.55;const dry=c.createGain();dry.gain.value=.5;const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=5200;
+ bus=c.createGain();bus.gain.value=.9;bus.connect(lp);lp.connect(dry).connect(c.destination);lp.connect(cv).connect(wet).connect(c.destination)}return ac}
+// мягкий колокольчик: синус + тихие обертоны, плавная атака
+function bell(f,t0,d,v){const c=A(),t=c.currentTime+t0;[[1,1],[2.01,.28],[3.99,.08]].forEach(([m,k])=>{const o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=f*m;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*k,t+.035);g.gain.exponentialRampToValueAtTime(.0001,t+d/m**.3);o.connect(g).connect(bus);o.start(t);o.stop(t+d+.1)})}
+function tone(f,t0,d,v){bell(f,t0,d,v)}
+function air(t0,d,v,f1,f2){const c=A(),t=c.currentTime+t0,n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=Math.random()*2-1;
+ const s=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();s.buffer=b;fl.type="bandpass";fl.Q.value=.8;fl.frequency.setValueAtTime(f1,t);fl.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+d*.45);g.gain.linearRampToValueAtTime(0,t+d);s.connect(fl).connect(g).connect(bus);s.start(t)}
+const PENT=[523.25,587.33,659.25,783.99,880,1046.5,1174.66,1318.5];
+function click(){if(!snd)return;bell(PENT[3+rnd(3)],0,1.1,.035)}             // кнопки и меню
+function swSnd(){if(!snd)return;air(0,.6,.03,600,2400);bell(783.99,.08,1.6,.03);bell(1174.66,.2,1.8,.022)} // переход между экранами
+function magic(){if(!snd)return;air(0,.9,.03,800,4000);[0,2,4,5,7].forEach((k,i)=>bell(PENT[k],.06+i*.11,2.2,.03))} // «Спроси у Таро»
+function whoosh(){if(!snd)return;air(0,1.1,.045,300,1600);bell(659.25,.5,1.8,.02)} // колода
+function flipSnd(){if(!snd)return;air(0,.7,.03,2500,7000);[1046.5,1318.5,1567.98,2093].forEach((x,i)=>bell(x,.15+i*.12,2.6,.028));bell(261.63,.1,3,.04)} // переворот: мерцание
+$("#sndBtn").onclick=e=>{snd=!snd;e.currentTarget.classList.toggle('off',!snd);if(snd){A().resume();click()}};
+document.addEventListener("click",e=>{const t=e.target.closest("button,a");if(!t||t.id==="freeBtn"||t.id==="sndBtn")return;if(t.matches("a[href^='#']"))swSnd();else click()},true);
+function burst(el){const r=el.getBoundingClientRect(),b=document.createElement("div");b.className="burst";b.style.left=r.left+r.width/2+"px";b.style.top=r.top+r.height/2+"px";for(let i=0;i<22;i++){const s=document.createElement("i");b.append(s);const a=Math.random()*6.28,d=40+Math.random()*80;requestAnimationFrame(()=>requestAnimationFrame(()=>{s.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`;s.style.opacity=0}))}document.body.append(b);setTimeout(()=>b.remove(),1100)}
+// ---- расклады ----
+const SP={day:{pos:[""]},yn:{pos:[""]},fear:{pos:["Какой мой самый главный страх на сегодняшний день?","От чего он меня оберегает?","Какое желание стоит за этим страхом?"]}};
+const IMGC={};function pre(src){if(!IMGC[src]){const i=new Image();i.src=src;IMGC[src]=i.decode?i.decode().catch(()=>{}):Promise.resolve()}return IMGC[src]}
+pre("img/back.webp");DECK.forEach(c=>pre(c.img));
+const ARW='<svg class="arw" viewBox="0 0 240 14" fill="none" stroke="#d8bd7c" stroke-width="1" stroke-linecap="round"><path d="M2 7h236M10 2L2 7l8 5M230 2l8 5-8 5"/><circle cx="120" cy="7" r="2" fill="#ecd9a0"/></svg>';
+function setup(sp){const key=sp.dataset.spread,pos=SP[key].pos,n=pos.length,deck=shuffle();let got=[],busy=false;
+ sp.innerHTML=`<div class="deck"><div class="hint">Листайте колоду${ARW}</div><div class="strip pile"></div></div><div class="slots ${n===1?"single":""}">${pos.map((p,i)=>`<div class="slot"><div class="flip empty"><span class="sn">${n>1?i+1:"✦"}</span><div class="fi"></div></div></div>`).join("")}</div><div class="acts go"></div><div class="res"></div>`;
+ const st=sp.querySelector(".strip"),sl=sp.querySelectorAll(".flip");
+ deck.forEach((c,ix)=>{const im=new Image();im.style.setProperty("--i",Math.min(ix,24));im.src="img/back.webp";im.alt="Карта";im.onclick=()=>{if(got.length>=n||busy)return;busy=true;const k=got.length;got.push(c);im.classList.add("up");
+  pre(c.img).then(()=>setTimeout(()=>{sl[k].querySelector(".fi").innerHTML=`<img class="bk" src="img/back.webp" alt=""><img class="fr" src="${c.img}" alt="${c.name}">`;sl[k].classList.remove("empty");busy=false;
+   if(got.length===n){if(n===1)reveal(sp,key,got);else{const g=sp.querySelector(".go");g.innerHTML=`<button class="btn main">Получить ответ</button>`;g.firstChild.onclick=()=>{g.innerHTML="";reveal(sp,key,got)}}}},380))};st.append(im)});}
+function reveal(sp,key,cs){Promise.all(cs.map(c=>pre(c.img))).then(()=>{const fl=sp.querySelectorAll(".flip");fl.forEach(f=>{f.classList.add("f");burst(f)});flipSnd();
+ setTimeout(()=>{const r=sp.querySelector(".res");r.innerHTML=`<div class="out">${build(key,cs)}<div class="acts"><button class="btn" data-again>Пройти еще раз</button><button class="btn main" data-go>Хочу персональный расклад</button></div></div>`;
+  r.querySelector("[data-go]").onclick=()=>$("#order").scrollIntoView();r.querySelector("[data-again]").onclick=()=>{setup(sp);setTimeout(()=>{deal(sp.querySelector(".strip.pile"))},300);sp.closest("section").scrollIntoView()};},900)})}
+function paras(t){return t.split(/(?<=[.!?»])\s+(?=[А-ЯA-Z«])/).reduce((a,x,i)=>{if(i%2===0)a.push(x);else a[a.length-1]+=" "+x;return a},[]).map(x=>`<p>${x}</p>`).join("")}
+function cardBlock(c,ex){return `<h3 class="cn">${c.name}</h3><p class="kw">${c.theme} — ${c.kw}</p><div class="tx">${paras(c.path+" "+c.up+(ex?" "+ex:""))}</div>`}
+function build(key,cs){const c=cs[0];
+ if(key==="day"){const d=dayOf(c);return `<h3 class="cn">${c.name}</h3><p class="kw">${d[0]}</p><div class="tx">${paras(d[1])}</div>`}
+ if(key==="yn"){let v=c.yes;const a=v>0?"Скорее да":v<0?"Скорее нет":"Ситуация неоднозначна";
+  const ex=v>0?"Энергия карты поддерживает Вас: обстоятельства складываются благоприятно, если Вы будете действовать с открытым сердцем.":v<0?"Карта мягко советует не спешить: возможно, сейчас стоит подождать или поискать другой путь.":"Ответ зависит от Ваших шагов: прислушайтесь к себе и уточните, чего Вы хотите на самом деле.";
+  return cardBlock(c)+`<div class="ans">${a}</div><div class="tx"><p>${ex}</p></div>`}
+ // страх: каждая карта трактуется как ответ на вопрос расклада
+ const ix=c=>DECK.findIndex(d=>d.img===c.img),lc=t=>t.charAt(0).toLowerCase()+t.slice(1);
+ const F=cs.map(c=>FT[ix(c)]),HELP=["Признать страх — уже половина пути: теперь он не управляет Вами из тени.","Поблагодарите этот страх: он долго заботился о Вас как умел.","Это желание — Ваш настоящий ориентир, и оно сильнее страха."];
+ let h=cs.map((c,i)=>`<div class="box"><b>${i+1}. ${SP.fear.pos[i]}</b><h3 class="cn">${c.name}</h3><p class="kw">${c.theme} — ${c.kw}</p><div class="tx"><p>${F[i][i]}</p><p>${HELP[i]}</p></div></div>`).join("");
+ const mj=cs.filter(c=>c.major).length,cnt={};cs.forEach(c=>c.suit&&(cnt[c.suit]=(cnt[c.suit]||0)+1));
+ const dom=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];let s=[];
+ s.push(`Карта «${cs[0].name}» называет главный страх сегодняшнего дня: ${lc(F[0][0])} Карта «${cs[1].name}» показывает, что за ним стоит забота: ${lc(F[1][1]).replace(/^он /,"этот страх ")} А карта «${cs[2].name}» открывает самое важное: ${lc(F[2][2]).replace(/^за ним — /,"")}`);
+ s.push(mj>=2?`Старших арканов ${mj} из трех: этот страх связан с Вашим жизненным путем в целом, и, проживая его, Вы делаете большой шаг в развитии.`:mj===1?`Старший аркан «${cs.find(c=>c.major).name}» отмечает главный узел: именно здесь страх и желание встречаются сильнее всего.`:"Старших арканов нет: страх живет в повседневности, а значит, его можно мягко растворять простыми шагами.");
+ if(dom&&cnt[dom]>=2)s.push(`Преобладает стихия ${SUITS[dom][1]} (${SUITS[dom][3]}): именно в этой сфере страх проявляется ярче всего, и именно здесь Вас ждет освобождение.`);
+ s.push(`Страх и желание — две стороны одной медали. Когда Вы открываетесь теме «${cs[2].kw}», страх, связанный с темой «${cs[0].kw}», теряет силу и становится Вашим союзником.`);
+ return h+`<div class="box"><h3>Общий смысл расклада</h3>${s.map(x=>`<p>${x}</p>`).join("")}<p><i>Вопрос для размышления:</i> ${cs[2].q}</p></div>`}
+$$(".sp").forEach(setup);
+const IO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const s=e.target.querySelector(".strip.pile");if(s)setTimeout(()=>deal(s),60)}}),{threshold:.3});$$(".sp").forEach(s=>IO.observe(s));
+function deal(st){if(!st||!st.classList.contains("pile"))return;const W=st.clientWidth,ims=[...st.children];ims.forEach((im,i)=>{im.style.setProperty("--dx",(W/2-im.offsetWidth/2-im.offsetLeft+st.scrollLeft)+"px");im.style.setProperty("--rot",(rnd(11)-5)+"deg")});
+ st.offsetWidth;st.classList.add("stack");st.classList.remove("pile");whoosh();setTimeout(()=>{st.classList.add("spread");st.classList.remove("stack");if(snd)air(0,.8,.03,1200,500);setTimeout(()=>st.classList.remove("spread"),1400)},Math.min(ims.length,24)*70+600)}
+// hero
+const hf=$("#heroFan");[-28,-14,0,14,28].forEach((a,i)=>{const im=new Image();im.src="img/back.webp";im.alt="";im.style.setProperty("--a",a+"deg");im.style.animationDelay=(-i*.7)+"s";hf.append(im)});
+const sk=$("#spk");for(let i=0;i<14;i++){const s=document.createElement("i");s.style.left=Math.random()*100+"%";s.style.top=Math.random()*100+"%";s.style.animationDuration=4+Math.random()*6+"s";s.style.animationDelay=-Math.random()*8+"s";sk.append(s)}
+// меню
+$("#menuBtn").onclick=e=>{e.stopPropagation();$("#drop").classList.toggle("o")};document.addEventListener("click",()=>$("#drop").classList.remove("o"));
+$$("#themes button").forEach(b=>b.onclick=()=>{$$("#themes button").forEach(x=>x.classList.remove("on"));b.classList.add("on")});
+$$("[data-tier]").forEach(b=>b.onclick=()=>{const u=PAY_URLS[b.dataset.tier];if(u)window.location.href=u;else toast("Прием заказов скоро откроется")});
+$("#readerBtn").onclick=()=>{window.location.href=READER_URL};$("#donateBtn").onclick=()=>{window.location.href=DONATE_URL};
+$("#freeBtn").onclick=()=>{const o=$("#acc").classList.toggle("o");if(o)magic();else click();$("#top").classList.toggle("open",o)};
+const hsp=$("#heroSpk");for(let i=0;i<26;i++){const s=document.createElement("i");s.style.left=Math.random()*100+"%";s.style.top=Math.random()*100+"%";s.style.setProperty("--x",(Math.random()*40-20)+"px");s.style.setProperty("--y",(-10-Math.random()*30)+"px");s.style.animationDuration=2+Math.random()*3+"s";s.style.animationDelay=-Math.random()*4+"s";hsp.append(s)}
