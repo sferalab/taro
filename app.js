@@ -7,7 +7,7 @@ function rnd(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]
 function shuffle(){const d=DECK.map((c,i)=>i);for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]]}return d.map(i=>({...DECK[i],r:false}))}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("v");setTimeout(()=>e.classList.remove("v"),2600)}
 // ---- звук (WebAudio, мягкий синтез с реверберацией) ----
-let snd=false,ac=null,bus=null;
+let snd=true,ac=null,bus=null;
 function A(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const c=ac,len=c.sampleRate*3.2,ir=c.createBuffer(2,len,c.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2)}
  const cv=c.createConvolver();cv.buffer=ir;const wet=c.createGain();wet.gain.value=.55;const dry=c.createGain();dry.gain.value=.5;const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=5200;
  bus=c.createGain();bus.gain.value=.9;bus.connect(lp);lp.connect(dry).connect(c.destination);lp.connect(cv).connect(wet).connect(c.destination)}return ac}

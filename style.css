@@ -125,3 +125,4 @@ h2{margin-top:6px}section .orn{margin:2px 0 8px}.lead{line-height:1.45;margin:0 
 .legal{margin-top:14px;line-height:1.6}.legal a{color:var(--g2)}footer:has(.legal){opacity:.8}
 .doc{text-align:left}.doc h2{text-align:center}.doc h3{color:var(--g2)}.doc p,.doc li{line-height:1.55}.doc .price{font-size:1.4rem;color:var(--g2)}.back{display:inline-block;margin:18px 0 0;text-decoration:none}
 .doc{overflow-wrap:anywhere}
+@keyframes sndp{0%,100%{box-shadow:0 0 0 0 rgba(212,175,95,0)}50%{box-shadow:0 0 0 6px rgba(212,175,95,.35)}}#sndBtn.pulse{animation:sndp 1.6s ease-in-out 4;border-radius:50%}
