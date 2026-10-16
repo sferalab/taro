@@ -1,7 +1,7 @@
 // Ссылки на оплату персональных раскладов (пока пусто — показывается уведомление)
 const PAY_URLS={t300:"",t500:"",t900:""};
-const READER_URL="https://app.lava.top/products/9180cf9e-30e3-4d68-8228-bbbfa04704ed";
-const DONATE_URL="https://app.lava.top/mayayav?tabId=donate";
+const READER_URL="";
+const DONATE_URL="";
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 function rnd(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}
 function shuffle(){const d=DECK.map((c,i)=>i);for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]]}return d.map(i=>({...DECK[i],r:false}))}
@@ -68,7 +68,7 @@ const sk=$("#spk");for(let i=0;i<14;i++){const s=document.createElement("i");s.s
 $("#menuBtn").onclick=e=>{e.stopPropagation();$("#drop").classList.toggle("o")};document.addEventListener("click",()=>$("#drop").classList.remove("o"));
 $$("#themes button").forEach(b=>b.onclick=()=>{$$("#themes button").forEach(x=>x.classList.remove("on"));b.classList.add("on")});
 $$("[data-tier]").forEach(b=>b.onclick=()=>{const u=PAY_URLS[b.dataset.tier];if(u)window.location.href=u;else toast("Прием заказов скоро откроется")});
-$("#readerBtn").onclick=()=>{window.location.href=READER_URL};$("#donateBtn").onclick=()=>{window.location.href=DONATE_URL};
+$("#readerBtn").onclick=()=>{if(READER_URL)window.location.href=READER_URL;else toast("Прием заказов скоро откроется")};$("#donateBtn").onclick=()=>{if(DONATE_URL)window.location.href=DONATE_URL;else toast("Скоро здесь можно будет поддержать автора")};
 $("#freeBtn").onclick=()=>{const o=$("#acc").classList.toggle("o");if(o)magic();else click();$("#top").classList.toggle("open",o)};
 const hsp=$("#heroSpk");for(let i=0;i<26;i++){const s=document.createElement("i");s.style.left=Math.random()*100+"%";s.style.top=Math.random()*100+"%";s.style.setProperty("--x",(Math.random()*40-20)+"px");s.style.setProperty("--y",(-10-Math.random()*30)+"px");s.style.animationDuration=2+Math.random()*3+"s";s.style.animationDelay=-Math.random()*4+"s";hsp.append(s)}
 
